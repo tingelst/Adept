@@ -26,7 +26,7 @@
 /* Contents:
    SECTION 0: Adept version
    SECTION 1: User changable defines
-   SECTION 2: Defines requiring a library recompile 
+   SECTION 2: Defines requiring a library recompile
    SECTION 3: Header files
    SECTION 4: Miscellaneous
    SECTION 5: Exceptions
@@ -90,7 +90,7 @@
 // by expressions in the forward pass using the pause_recording() and
 // continue_recording() functions. To enable this feature uncomment
 // the following, but note that it slows down the forward pass a
-// little.  
+// little.
 //#define ADEPT_RECORDING_PAUSABLE 1
 
 // Often when you first convert a code for automatic differentiation
@@ -131,8 +131,9 @@
 #ifndef ADEPT_MULTIPASS_SIZE
 //#define ADEPT_MULTIPASS_SIZE 1
 //#define ADEPT_MULTIPASS_SIZE 2
-#define ADEPT_MULTIPASS_SIZE 4
-//#define ADEPT_MULTIPASS_SIZE 8
+//#define ADEPT_MULTIPASS_SIZE 3
+//#define ADEPT_MULTIPASS_SIZE 4
+#define ADEPT_MULTIPASS_SIZE 8
 //#define ADEPT_MULTIPASS_SIZE 15
 //#define ADEPT_MULTIPASS_SIZE 16
 //#define ADEPT_MULTIPASS_SIZE 32
@@ -230,7 +231,7 @@ namespace adept {
   // measurable slow-down compared to unsigned int
   //  typedef std::size_t Offset;
   typedef unsigned int Offset;
- 
+
   // Declare a thread-safe and a thread-unsafe global pointer to the
   // current stack
   class Stack;
@@ -297,28 +298,28 @@ namespace adept {
   // Now we define the various specific exceptions that can be thrown.
   class gradient_out_of_range : public autodiff_exception {
   public:
-    gradient_out_of_range(const char* message 
+    gradient_out_of_range(const char* message
 			  = "Gradient index out of range: probably aReal objects have been created after a set_gradient(s) call")
     { message_ = message; }
   };
 
   class gradients_not_initialized : public autodiff_exception {
   public:
-    gradients_not_initialized(const char* message 
+    gradients_not_initialized(const char* message
 			      = "Gradients not initialized: at least one call to set_gradient(s) is needed before a forward or reverse pass")
     { message_ = message; }
   };
 
   class stack_already_active : public autodiff_exception {
   public:
-    stack_already_active(const char* message 
+    stack_already_active(const char* message
 			 = "Attempt to activate an adept::Stack when one is already active in this thread")
     { message_ = message; }
   };
 
   class dependents_or_independents_not_identified : public autodiff_exception {
   public:
-    dependents_or_independents_not_identified(const char* message 
+    dependents_or_independents_not_identified(const char* message
 		 = "Dependent or independent variables not identified before a Jacobian computation")
     { message_ = message; }
   };
@@ -374,7 +375,7 @@ namespace adept {
       n_operations_(0), n_allocated_operations_(0),
       i_gradient_(0), n_allocated_gradients_(0), max_gradient_(0),
       n_gradients_registered_(0),
-      gradients_initialized_(false), 
+      gradients_initialized_(false),
 #ifdef ADEPT_STACK_THREAD_UNSAFE
       is_thread_unsafe_(true),
 #else
@@ -390,13 +391,13 @@ namespace adept {
       have_openmp_(false),
 #endif
       openmp_manually_disabled_(false)
-    { 
+    {
       initialize(ADEPT_INITIAL_STACK_LENGTH);
       if (activate_immediately) {
 	activate();
       }
     }
-  
+
     // Destructor
     ~Stack();
 
@@ -431,7 +432,7 @@ namespace adept {
 	throw(non_finite_gradient());
       }
 #endif
-      
+
 #ifdef ADEPT_REMOVE_NULL_STATEMENTS
     }
 #endif
@@ -616,12 +617,12 @@ namespace adept {
     // resulting matrix, the "m" dimension of the matrix varies
     // fastest. This is implemented by calling one of jacobian_forward
     // and jacobian_reverse, whichever would be faster.
-    void jacobian(Real* jacobian_out);
+    void jacobian(Real* jacobian_out, bool row_major=false);
 
     // Compute the Jacobian matrix, but explicitly specify whether
     // this is done with repeated forward or reverse passes.
-    void jacobian_forward(Real* jacobian_out);
-    void jacobian_reverse(Real* jacobian_out);
+    void jacobian_forward(Real* jacobian_out, bool row_major=false);
+    void jacobian_reverse(Real* jacobian_out, bool row_major=false);
 
     // Return maximum number of OpenMP threads to be used in Jacobian
     // calculation
@@ -864,7 +865,7 @@ namespace adept {
     void preallocate_operations(Offset n) {
       if (n_allocated_operations_ < n_operations_+n+1) {
 	grow_operation_stack(n);
-      }      
+      }
     }
 
 #ifndef ADEPT_STACK_STORAGE_STL
@@ -1165,7 +1166,7 @@ private:
     Real one_over_b_;
     Real result_;
   };
-  
+
   // Overload division operator for Expression arguments
   template <class A, class B>
   inline
@@ -1278,7 +1279,7 @@ private:
 			      const Expression<A>& a) {
     return ScalarMultiply<A>(a.cast(),b);
   }
-  
+
   // Overload division operator for expression divided by scalar to
   // return ScalarMultiply object
   template <class A>
@@ -1292,9 +1293,9 @@ private:
   template <class B>
   struct ScalarDivide : public Expression<ScalarDivide<B> > {
     ScalarDivide(const Real& a, const Expression<B>& b)
-      : b_(b.cast()), one_over_b_(1.0/b_.value()), 
+      : b_(b.cast()), one_over_b_(1.0/b_.value()),
 	result_(a * one_over_b_) { }
-    // If f(a,b) = a/b then df/db = -a/(b*b)    
+    // If f(a,b) = a/b then df/db = -a/(b*b)
     void calc_gradient(Stack& stack) const {
       b_.calc_gradient(stack, -result_*one_over_b_);
     }
@@ -1317,7 +1318,7 @@ private:
 			    const Expression<B>& b) {
     return ScalarDivide<B>(a,b.cast());
   }
-  
+
   // Conditional operators should behave exactly the same as with
   // non-active arguments so in each of the cases below the value()
   // function is called to extract the value of the expression
@@ -1347,10 +1348,10 @@ private:
   ADEPT_DEFINE_CONDITIONAL(operator<, <)
   ADEPT_DEFINE_CONDITIONAL(operator>=, >=)
   ADEPT_DEFINE_CONDITIONAL(operator<=, <=)
-  
+
 #undef ADEPT_DEFINE_CONDITIONAL
-  
-  // UnaryMinus: negation of expression 
+
+  // UnaryMinus: negation of expression
   template <class A>
   struct UnaryMinus : public Expression<UnaryMinus<A> > {
     UnaryMinus(const Expression<A>& a)
@@ -1367,7 +1368,7 @@ private:
   private:
     const A& a_;
   };
-  
+
   // Overload unary minus of expression
   template <class A>
   inline
@@ -1401,7 +1402,7 @@ private:
     const A& a_;
     Real result_;
   };
-  
+
 } // End namespace adept
 
 // It is important to place overloads of mathematical functions in the
@@ -1606,7 +1607,7 @@ namespace adept {
   template <class A, class B>
   struct Pow : public Expression<Pow<A,B> > {
     Pow(const Expression<A>& a, const Expression<B>& b)
-      : a_(a.cast()), b_(b.cast()), 
+      : a_(a.cast()), b_(b.cast()),
 	result_(pow(a_.value(), b_.value())) { };
     // If f(a,b)=pow(a,b) then df/da=b*pow(a,b-1) and df/db=log(a)*pow(a,b)
     void calc_gradient(Stack& stack) const {
@@ -1614,7 +1615,7 @@ namespace adept {
       b_.calc_gradient(stack, log(a_.value())*result_);
     }
     void calc_gradient(Stack& stack, const Real& multiplier) const {
-      a_.calc_gradient(stack, b_.value()*pow(a_.value(), 
+      a_.calc_gradient(stack, b_.value()*pow(a_.value(),
 					     b_.value()-1.0)*multiplier);
       b_.calc_gradient(stack, log(a_.value())*result_*multiplier);
     }
@@ -1626,7 +1627,7 @@ namespace adept {
     const B& b_;
     Real result_;
   };
-  
+
   // PowScalarExponent: an expression to the power of a scalar
   template <class A>
   struct PowScalarExponent : public Expression<PowScalarExponent<A> > {
@@ -1679,7 +1680,7 @@ adept::Pow<A,B> pow(const adept::Expression<A>& a,
 // Overload pow for expression to the power of scalar
 template <class A>
 inline
-adept::PowScalarExponent<A> pow(const adept::Expression<A>& a, 
+adept::PowScalarExponent<A> pow(const adept::Expression<A>& a,
 				const adept::Real& b) {
   return adept::PowScalarExponent<A>(a.cast(),b);
 }
@@ -1712,13 +1713,13 @@ namespace adept {
     // a particular function, because n_active_variables is
     // intentionally not present
   };
-  
+
   // aReal is an active variable so n_active_variables is 1
   template<>
   struct Traits<aReal> {
-    enum { n_active_variables = 1 }; 
+    enum { n_active_variables = 1 };
   };
-  
+
   // For an arbitrary binary operation, the number of active variables
   // is the sum of the number of active variables in the two arguments
 #define ADEPT_DEFINE_BINARY_TRAIT(OP)			\
@@ -1733,7 +1734,7 @@ namespace adept {
   ADEPT_DEFINE_BINARY_TRAIT(Multiply)
   ADEPT_DEFINE_BINARY_TRAIT(Divide)
   ADEPT_DEFINE_BINARY_TRAIT(Pow)
-  
+
 #undef ADEPT_DEFINE_BINARY_TRAIT
 
   // For an arbitrary unary operation, the number of active variables
@@ -1776,14 +1777,14 @@ namespace adept {
   ADEPT_DEFINE_UNARY_TRAIT(Erfc)
   ADEPT_DEFINE_UNARY_TRAIT(PowScalarExponent)
   ADEPT_DEFINE_UNARY_TRAIT(PowScalarBase)
-  
+
 #undef ADEPT_DEFINE_UNARY_TRAIT
 
 
   // ---------------------------------------------------------------------
   // SECTION 9: Definition of aReal
   // ---------------------------------------------------------------------
-  
+
   // The basic active type wrapping a Real (invariably double) number;
   // sometime this will be generalized to floats, complex<double>
   // etc. This inherits from Expression so that it can be used in
@@ -1798,7 +1799,7 @@ namespace adept {
     // corresponding gradient will not be set to zero.
     aReal()
       : val_(0.0), gradient_offset_(ADEPT_ACTIVE_STACK->register_gradient()) { }
-    
+
     // This constructor is invoked with either of the following:
     //   aReal x = 1.0;
     //   aReal x(1.0);
@@ -1818,12 +1819,12 @@ namespace adept {
       }
 #endif
    }
-    
+
 
 #ifndef ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION
     // Normal copy construction: register the new object then treat
     // this as an assignment
-    aReal(const aReal& rhs) 
+    aReal(const aReal& rhs)
       : val_(0.0), gradient_offset_(ADEPT_ACTIVE_STACK->register_gradient())
     {
       *this = rhs;
@@ -1841,7 +1842,7 @@ namespace adept {
     aReal(const aReal& rhs)
       : val_(rhs.value()), gradient_offset_(rhs.gradient_offset()) { }
 #endif
-    
+
     // Construction with an expression
     template<class R>
     aReal(const Expression<R>& rhs)
@@ -1867,7 +1868,7 @@ namespace adept {
       }
 #endif
     }
-    
+
     // Destructor simply unregisters the object from the stack,
     // freeing up the gradient offset for another
     ~aReal() {
@@ -1903,7 +1904,7 @@ namespace adept {
 #endif
       return *this;
     }
-    
+
     // Assignment operator with an inactive variable on the rhs
     aReal& operator=(const Real& rhs) {
       val_ = rhs;
@@ -1993,7 +1994,7 @@ namespace adept {
     // part of a matrix that is oriented in a different sense.
     void add_derivative_dependence(const aReal* rhs,
 				   const Real* multiplier,
-				   int n = 1, 
+				   int n = 1,
 				   int multiplier_stride = 1) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
@@ -2062,7 +2063,7 @@ namespace adept {
 				      const Real& multiplier) {
       append_derivative_dependence(&rhs, &multiplier);
     }
-    
+
     // If an expression leads to calc_gradient being called on an
     // aReal object, we push the multiplier and the gradient offset on
     // to the operation stack (or 1.0 if no multiplier is specified
@@ -2072,24 +2073,24 @@ namespace adept {
     void calc_gradient(Stack& stack, const Real& multiplier) const {
       stack.push_rhs(multiplier, gradient_offset_);
     }
-   
+
     // Get the actual value of this object; needed for fprintf calls,
     // for example, to get the underlying Real type out
     ADEPT_VALUE_RETURN_TYPE value() const {
-      return val_; 
+      return val_;
     }
 
     // Push the gradient on to the operation stack and return the
     // numerical value
-    Real value_and_gradient(Stack& stack) const { 
+    Real value_and_gradient(Stack& stack) const {
       stack.push_rhs(1.0, gradient_offset_);
       return val_;
     };
 
     // Get the offset of the gradient information for this object
     const Offset& gradient_offset() const { return gradient_offset_; }
- 
-    // Set the value 
+
+    // Set the value
     void set_value(const Real& x) { val_ = x; }
 
     // Set the value of the gradient, for initializing an adjoint;
@@ -2097,7 +2098,7 @@ namespace adept {
     // object but rather held by the stack
     void set_gradient(const Real& gradient) const {
       return ADEPT_ACTIVE_STACK->set_gradients(gradient_offset_,
-					       gradient_offset_+1, 
+					       gradient_offset_+1,
 					       &gradient);
     }
 
@@ -2113,7 +2114,7 @@ namespace adept {
 					gradient_offset_+1, &gradient);
       return gradient;
     }
-    
+
   private:
     // --- DATA SECTION ---
     Real val_;                     // The numerical value
@@ -2138,7 +2139,7 @@ namespace adept {
   // for double arguments to simply return the argument.
   template<class A>
   inline Real value(const Expression<A>& x) { return x.value(); }
-  
+
   // A way of setting the initial values of an array of n aReal
   // objects without the expense of placing them on the stack
   template<typename Type>
@@ -2159,7 +2160,7 @@ namespace adept {
       data[i] = a[i].value();
     }
   }
-  
+
   // Set the initial gradients of an array of n aReal objects; this
   // should be done after the algorithm has called and before the
   // Stack::forward or Stack::reverse functions are called
@@ -2171,7 +2172,7 @@ namespace adept {
       a[i].set_gradient(data[i]);
     }
   }
-  
+
   // Extract the gradients from an array of aReal objects after the
   // Stack::forward or Stack::reverse functions have been called
   template<typename Type>
@@ -2182,7 +2183,7 @@ namespace adept {
       a[i].get_gradient(data[i]);
     }
   }
-  
+
   // If we send an aReal object to a stream it behaves just like a
   // double
   inline
@@ -2192,7 +2193,7 @@ namespace adept {
     os << value(x);
     return os;
   }
-  
+
   // Sending a Stack object to a stream reports information about the
   // stack
   inline
@@ -2226,7 +2227,7 @@ namespace adept {
   // Return the compiler flags used when compiling the Adept library
   // (e.g. "-Wall -g -O3")
   std::string compiler_flags();
-  
+
   // Return whether the active stack is stored in a global variable
   // (thread unsafe) rather than a thread-local global variable
   // (thread safe)
@@ -2234,12 +2235,12 @@ namespace adept {
   inline bool is_thread_unsafe() { return true; }
 #else
   inline bool is_thread_unsafe() { return false; }
-#endif 
+#endif
 
   // Subsequent code should use adept::active_stack() rather than this
   // preprocessor macro
 #undef ADEPT_ACTIVE_STACK
-  
+
 } // End of namespace adept
 
 
