@@ -907,8 +907,8 @@ private:
     // OpenMP versions of the forward and reverse Jacobian functions,
     // which are called from the jacobian_forward and jacobian_reverse
     // if OpenMP is enabled
-    void jacobian_forward_openmp(Real* jacobian_out);
-    void jacobian_reverse_openmp(Real* jacobian_out);
+    void jacobian_forward_openmp(Real* jacobian_out, bool row_major=false);
+    void jacobian_reverse_openmp(Real* jacobian_out, bool row_major=false);
 
   private:
     // --- DATA SECTION ---

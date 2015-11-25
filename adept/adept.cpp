@@ -304,8 +304,9 @@ void Stack::jacobian_forward(Real* jacobian_out, bool row_major) {
 #ifdef _OPENMP
   if (have_openmp_ && !openmp_manually_disabled_ &&
       n_independent() > ADEPT_MULTIPASS_SIZE && omp_get_max_threads() > 1) {
+    std::cout << "OpenMP forward" << std::endl;
     // Call the parallel version
-    jacobian_forward_openmp(jacobian_out);
+    jacobian_forward_openmp(jacobian_out, row_major);
     return;
   }
 #endif
@@ -430,7 +431,7 @@ void Stack::jacobian_reverse(Real* jacobian_out, bool row_major) {
   if (have_openmp_ && !openmp_manually_disabled_ &&
       n_dependent() > ADEPT_MULTIPASS_SIZE && omp_get_max_threads() > 1) {
     // Call the parallel version
-    jacobian_reverse_openmp(jacobian_out);
+    jacobian_reverse_openmp(jacobian_out, row_major);
     return;
   }
 #endif
